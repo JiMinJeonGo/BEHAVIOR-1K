@@ -1516,10 +1516,13 @@ class Robot(USDObject, GymObservable):
                 len(self.base_control_idx) == 2
             ), "Differential drive can only be used with robot with two base joints!"
 
-    def get_obs(self):
+    def get_obs(self, *, include_visual_obs=True):
         """
         Grabs all observations from the robot. This is keyword-mapped based on each observation modality
             (e.g.: proprio, rgb, etc.)
+
+        Args:
+            include_visual_obs (bool): Read vision sensors alongside nonvisual observations.
 
         Returns:
             2-tuple:
@@ -1533,6 +1536,8 @@ class Robot(USDObject, GymObservable):
         obs_dict = dict()
         info_dict = dict()
         for sensor_name, sensor in self._sensors.items():
+            if not include_visual_obs and isinstance(sensor, VisionSensor):
+                continue
             obs_dict[sensor_name], info_dict[sensor_name] = sensor.get_obs()
             for key in obs_dict[sensor_name]:
                 if "pointcloud" in key:

@@ -1558,8 +1558,10 @@ def _launch_simulator(*args, **kwargs):
             # Store the original value, set the new value, yield, and then reset the original value
             original_value = self._render_on_step
             self._render_on_step = value
-            yield
-            self._render_on_step = original_value
+            try:
+                yield
+            finally:
+                self._render_on_step = original_value
 
         @contextlib.contextmanager
         def slowed(self, slow_dt=1e-6):

@@ -472,9 +472,12 @@ class Environment(gym.Env, GymObservable, Recreatable):
         """No-op to satisfy certain RL frameworks."""
         pass
 
-    def get_obs(self):
+    def get_obs(self, *, include_visual_obs=True):
         """
         Get the current environment observation.
+
+        Args:
+            include_visual_obs (bool): Read vision sensors alongside nonvisual observations.
 
         Returns:
             2-tuple:
@@ -487,7 +490,7 @@ class Environment(gym.Env, GymObservable, Recreatable):
         # Grab all observations from each robot
         for robot in self.robots:
             if maxdim(robot.observation_space) > 0:
-                obs[robot.name], info[robot.name] = robot.get_obs()
+                obs[robot.name], info[robot.name] = robot.get_obs(include_visual_obs=include_visual_obs)
 
         # Add task observations
         if maxdim(self._task.observation_space) > 0:
@@ -499,6 +502,9 @@ class Environment(gym.Env, GymObservable, Recreatable):
             external_info = dict()
             for sensor_name, sensor in self._external_sensors.items():
                 if not self._external_sensors_include_in_obs[sensor_name]:
+                    continue
+
+                if not include_visual_obs and isinstance(sensor, VisionSensor):
                     continue
 
                 external_obs[sensor_name], external_info[sensor_name] = sensor.get_obs()
@@ -579,10 +585,10 @@ class Environment(gym.Env, GymObservable, Recreatable):
         for robot in self.robots:
             robot.apply_action(action_dict[robot.name])
 
-    def _post_step(self, action):
+    def _post_step(self, action, *, include_visual_obs=True):
         """Apply the post-sim-step part of an environment step, i.e. grab observations and return the step results."""
         # Grab observations
-        obs, obs_info = self.get_obs()
+        obs, obs_info = self.get_obs(include_visual_obs=include_visual_obs)
 
         # Step the scene graph builder if necessary
         if self._scene_graph_builder is not None:
